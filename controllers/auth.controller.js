@@ -7,6 +7,8 @@ const User = require('../models/user.model')
 
 /* include helpers */
 const { createAccessToken, createRefreshToken } = require('../helpers/token.helper')
+const { handleError } = require('../helpers/handle_error.helper')
+const statusError = require('../helpers/status_error.helper')
 
 module.exports.signUp = async (req, res) => {
   try {
@@ -14,7 +16,7 @@ module.exports.signUp = async (req, res) => {
 
     /* check exists user */
     const user = await User.findOne({ username }).lean()
-    if (user) throw 'user has already exists!'
+    if (user) statusError.bad_request_with_message('user has already exists!')
 
     /* hash password */
     const salt = await bcrypt.genSalt(10)
@@ -32,7 +34,7 @@ module.exports.signUp = async (req, res) => {
 
     res.json(create_user)
   } catch (error) {
-    res.status(400).json({ error_status: true, message: error })
+    handleError(error, res)
   }
 }
 
@@ -42,11 +44,11 @@ module.exports.signIn = async (req, res) => {
 
     /* check user */
     const user = await User.findOne({ username }).lean()
-    if (!user) throw 'username or password was wrong!'
+    if (!user) statusError.not_found
 
     /* check password */
     const comparePassword = await bcrypt.compare(password, user.password)
-    if (!comparePassword) throw 'username or password was wrong!'
+    if (!comparePassword) statusError.bad_request_with_message('username or password was wrong!')
 
     /* genarate access token */
     const access_token = createAccessToken({
@@ -65,21 +67,21 @@ module.exports.signIn = async (req, res) => {
       username: user.username
     })
   } catch (error) {
-    res.status(400).json({ error_status: true, message: error })
+    handleError(error, res)
   }
 }
 
 module.exports.refreshToken = async (req, res) => {
   try {
     let refresh_token = req.body.refresh_token
-    if (!refresh_token) throw 'refresh_token not found!'
+    if (!refresh_token) throw statusError.bad_request
 
     const payload = verify(refresh_token, process.env.REFRESH_TOKEN_SECRET)
-    if (!payload) throw 'can not verify refresh_token!'
+    if (!payload) throw statusError.not_found
 
     /* token is valid, check user exist */
     const user = await User.findOne({ _id: payload.user_id }).lean()
-    if (!user) throw 'user not found!'
+    if (!user) throw statusError.not_found
 
     /* genarate access token */
     const access_token = createAccessToken({
@@ -98,7 +100,7 @@ module.exports.refreshToken = async (req, res) => {
       username: user.username,
     })
   } catch (error) {
-    res.status(400).json({ error_status: true, message: error })
+    handleError(error, res)
   }
 }
 
@@ -106,11 +108,11 @@ module.exports.account = async (req, res) => {
   try {
     const { user_id } = req.user
 
-    const user = await User.findOne({ _id: user_id })
-    if (!user) throw 'not found user!'
+    const user = await User.findOne({ _id: user_id }).lean()
+    if (!user) throw statusError.bad_request
 
     res.status(200).json(user)
   } catch (error) {
-    res.status(400).json({ error_status: true, message: error })
+    handleError(error, res)
   }
 }
