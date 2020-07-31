@@ -1,8 +1,12 @@
-const User = require('../models/user.model')
+/* include module */
 const bcrypt = require('bcrypt')
-// const jwt = require('jsonwebtoken')
-// const { verify } = require('jsonwebtoken')
-// const { createAccessToken, createRefreshToken } = require('../global_function/token')
+const { verify } = require('jsonwebtoken')
+
+/* include models */
+const User = require('../models/user.model')
+
+/* include helpers */
+const { createAccessToken, createRefreshToken } = require('../helpers/token.helper')
 
 module.exports.signUp = async (req, res) => {
   try {
@@ -28,110 +32,85 @@ module.exports.signUp = async (req, res) => {
 
     res.json(create_user)
   } catch (error) {
-    console.log('error -> ', error)
-    res.status(400).json({ status: true, message: error })
+    res.status(400).json({ error_status: true, message: error })
   }
 }
 
-// module.exports.signin = async (req, res) => {
-//   const { email, password } = req.body 
-//   console.log('email -> ', email)
-//   console.log('password -> ', password)
+module.exports.signIn = async (req, res) => {
+  try {
+    const { username, password } = req.body
 
-//   /* checking user */
-//   const user = await User.findOne({ email })
-//   if(!user) return res.status(401).json({ error: true, message: 'user not found!' })
+    /* check user */
+    const user = await User.findOne({ username }).lean()
+    if (!user) throw 'username or password was wrong!'
 
-//   /* checking password */
-//   const comparePassword = await bcrypt.compare(password, user.password)
-//   if(!comparePassword) return res.status(401).json({ error: true, message: 'password was wrong!' })
+    /* check password */
+    const comparePassword = await bcrypt.compare(password, user.password)
+    if (!comparePassword) throw 'username or password was wrong!'
 
-//   /* genarate access token */
-//   const accessToken = createAccessToken({ userId: user._id })
+    /* genarate access token */
+    const access_token = createAccessToken({
+      user_id: user._id,
+      username: user.username,
+      first_name: user.first_name,
+      last_name: user.last_name
+    })
 
-//   /* genarate refresh token */
-//   const refreshToken = createRefreshToken({ userId: user._id })
+    /* genarate refresh token */
+    const refresh_token = createRefreshToken({ user_id: user._id })
 
-//   /* save refresh token to DB */
-//   user.refreshToken = refreshToken
-//   user.save()
+    res.json({
+      access_token,
+      refresh_token,
+      username: user.username
+    })
+  } catch (error) {
+    res.status(400).json({ error_status: true, message: error })
+  }
+}
 
-//   /* send refresh token back */
-//   res.cookie('refreshtoken', refreshToken, {
-//     httpOnly: true,
-//     // path: '/api/user/refresh_token',
-//   })
+module.exports.refreshToken = async (req, res) => {
+  try {
+    let refresh_token = req.body.refresh_token
+    if (!refresh_token) throw 'refresh_token not found!'
 
-//   /* send access token back */
-//   res.send({
-//     accessToken,
-//     email,
-//     userId: user._id
-//   })
-// }
+    const payload = verify(refresh_token, process.env.REFRESH_TOKEN_SECRET)
+    if (!payload) throw 'can not verify refresh_token!'
 
-// module.exports.logout = (_req, res) => {
-//   res.clearCookie('refreshtoken'
-//   // , 
-//   //   {
-//   //    path: '/api/user/refresh_token' 
-//   //   }
-//   )
-//   return res.send({
-//     message: 'logged out'
-//   })
-// }
+    /* token is valid, check user exist */
+    const user = await User.findOne({ _id: payload.user_id }).lean()
+    if (!user) throw 'user not found!'
 
-// module.exports.getRefreshToken = async (req, res) => {
-//   try {
-//     if (!req.cookies) throw new Error("have no cookie!")
-//   } catch (err) {
-//     res.send({ error: err.message })
-//   }
+    /* genarate access token */
+    const access_token = createAccessToken({
+      user_id: user._id,
+      username: user.username,
+      first_name: user.first_name,
+      last_name: user.last_name
+    })
 
-//   const refreshtoken = req.cookies.refreshtoken
-//   if (!refreshtoken) return res.send({ accessToken: '1' })
+    /* genarate refresh token */
+    refresh_token = createRefreshToken({ user_id: user._id })
 
-//   let payload = null
-//   try {
-//     payload = verify(refreshtoken, process.env.REFRESH_TOKEN_SECRET)
-//   } catch (err) {
-//     return res.send({ accessToken: '2' })
-//   }
+    res.json({ 
+      access_token,
+      refresh_token,
+      username: user.username,
+    })
+  } catch (error) {
+    res.status(400).json({ error_status: true, message: error })
+  }
+}
 
-//   /* token is valid, check user exist */
-//   const user = await User.findOne({ _id: payload.userId })
-//   if (!user) return res.send({ accessToken: '3' })
+module.exports.account = async (req, res) => {
+  try {
+    const { user_id } = req.user
 
-//   /* user exist, check if refresh token exist on user */
-//   if (user.refreshToken != refreshtoken) return res.send({ accessToken: '4' })
+    const user = await User.findOne({ _id: user_id })
+    if (!user) throw 'not found user!'
 
-//   /* token exist, create new refresh- and access token */
-//   /* genarate access token */
-//   const accessToken = createAccessToken({ userId: user._id })
-
-//   /* genarate refresh token */
-//   const refreshToken = createRefreshToken({ userId: user._id })
-
-//   /* save refresh token to DB */
-//   user.refreshToken = refreshToken
-//   user.save()
-
-//   /* send refresh token back */
-//   res.cookie('refreshtoken', refreshToken, {
-//     httpOnly: true,
-//     // path: '/api/user/refresh_token'
-//   })
-
-//   return res.send({ 
-//     accessToken,
-//     email: user.email,
-//     userId: user._id 
-//   })
-// }
-
-// module.exports.getMyUser = async (req, res) => {
-//   const { userId } = req.user
-//   const user = await User.findOne({ _id: userId })
-//   res.status(200).json(user)
-// }
+    res.status(200).json(user)
+  } catch (error) {
+    res.status(400).json({ error_status: true, message: error })
+  }
+}
