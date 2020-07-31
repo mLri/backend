@@ -47,8 +47,8 @@ module.exports.signIn = async (req, res) => {
     if (!user) statusError.not_found
 
     /* check password */
-    const comparePassword = await bcrypt.compare(password, user.password)
-    if (!comparePassword) statusError.bad_request_with_message('username or password was wrong!')
+    const compare_password = await bcrypt.compare(password, user.password)
+    if (!compare_password) statusError.bad_request_with_message('username or password was wrong!')
 
     /* genarate access token */
     const access_token = createAccessToken({
