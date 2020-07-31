@@ -108,8 +108,11 @@ module.exports.account = async (req, res) => {
   try {
     const { user_id } = req.user
 
-    const user = await User.findOne({ _id: user_id }).lean()
+    let user = await User.findOne({ _id: user_id }).lean()
     if (!user) throw statusError.bad_request
+
+    delete user.password
+    delete user.__v
 
     res.status(200).json(user)
   } catch (error) {
