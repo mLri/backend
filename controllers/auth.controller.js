@@ -52,14 +52,14 @@ module.exports.signIn = async (req, res) => {
 
     /* genarate access token */
     const access_token = createAccessToken({
-      user_id: user._id,
+      _id: user._id,
       username: user.username,
       first_name: user.first_name,
       last_name: user.last_name
     })
 
     /* genarate refresh token */
-    const refresh_token = createRefreshToken({ user_id: user._id })
+    const refresh_token = createRefreshToken({ _id: user._id })
 
     res.json({
       access_token,
@@ -80,19 +80,19 @@ module.exports.refreshToken = async (req, res) => {
     if (!payload) throw statusError.not_found
 
     /* token is valid, check user exist */
-    const user = await User.findOne({ _id: payload.user_id }).lean()
+    const user = await User.findOne({ _id: payload._id }).lean()
     if (!user) throw statusError.not_found
 
     /* genarate access token */
     const access_token = createAccessToken({
-      user_id: user._id,
+      _id: user._id,
       username: user.username,
       first_name: user.first_name,
       last_name: user.last_name
     })
 
     /* genarate refresh token */
-    refresh_token = createRefreshToken({ user_id: user._id })
+    refresh_token = createRefreshToken({ _id: user._id })
 
     res.json({ 
       access_token,
@@ -106,9 +106,9 @@ module.exports.refreshToken = async (req, res) => {
 
 module.exports.account = async (req, res) => {
   try {
-    const { user_id } = req.user
+    const _user = req.user
 
-    let user = await User.findOne({ _id: user_id }).lean()
+    let user = await User.findOne({ _id: _user.principal._id }).lean()
     if (!user) throw statusError.bad_request
 
     delete user.password
