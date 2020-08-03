@@ -16,7 +16,7 @@ module.exports.signUp = async (req, res) => {
 
     /* check exists user */
     const user = await User.findOne({ username }).lean()
-    if (user) statusError.bad_request_with_message('user has already exists!')
+    if (user) throw statusError.bad_request_with_message('user has already exists!')
 
     /* hash password */
     const salt = await bcrypt.genSalt(10)
@@ -44,11 +44,11 @@ module.exports.signIn = async (req, res) => {
 
     /* check user */
     const user = await User.findOne({ username }).lean()
-    if (!user) statusError.not_found
+    if (!user) throw statusError.not_found
 
     /* check password */
     const compare_password = await bcrypt.compare(password, user.password)
-    if (!compare_password) statusError.bad_request_with_message('username or password was wrong!')
+    if (!compare_password) throw statusError.bad_request_with_message('username or password was wrong!')
 
     /* genarate access token */
     const access_token = createAccessToken({
