@@ -21,6 +21,12 @@ router.get('/account',
   checkAuth,
   authController.account)
 
+router.post('/test', (req, res) => {
+  res.json({
+    test:'gg'
+  })
+})
+
 router.post('/signin',
   validateBody(schemasAuth.signin),
   authController.signIn)
