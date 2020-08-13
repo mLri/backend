@@ -10,6 +10,10 @@ const authController = require('../controllers/auth.controller')
 /* include helpers */
 const { checkAuth } = require('../helpers/token.helper')
 
+router.get('/', (req, res) => {
+  res.send('hello wrold')
+})
+
 router.get('/account',
   checkAuth,
   authController.account)
