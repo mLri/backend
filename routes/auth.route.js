@@ -11,7 +11,10 @@ const authController = require('../controllers/auth.controller')
 const { checkAuth } = require('../helpers/token.helper')
 
 router.get('/', (req, res) => {
-  res.send('hello wrold')
+  res.json({
+    name: 'tosaporn',
+    status: true
+  })
 })
 
 router.get('/account',
