@@ -8,10 +8,7 @@ const app = express()
 
 /* use midle ware */
 app.use(express.json())
-app.use(cors({
-  origin: 'http://localhost:8080',
-  credentials: true
-}))
+app.use(cors())
 
 /* mongodb connection */
 // const mongoURI = `mongodb://${process.env.DB_URL}:${process.env.DB_PORT}/${process.env.DB_NAME}`

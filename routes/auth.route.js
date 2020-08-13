@@ -10,13 +10,13 @@ const authController = require('../controllers/auth.controller')
 /* include helpers */
 const { checkAuth } = require('../helpers/token.helper')
 
-router.get('/signin',
-  validateBody(schemasAuth.signin),
-  authController.signIn)
-
 router.get('/account',
   checkAuth,
   authController.account)
+
+router.post('/signin',
+  validateBody(schemasAuth.signin),
+  authController.signIn)
 
 router.post('/signup',
   validateBody(schemasAuth.signup),
