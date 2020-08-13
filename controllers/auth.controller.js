@@ -46,8 +46,6 @@ module.exports.signIn = async (req, res) => {
     const user = await User.findOne({ username }).lean()
     if (!user) throw statusError.not_found
 
-    console.log('user -> ', user)
-
     /* check password */
     const compare_password = await bcrypt.compare(password, user.password)
     if (!compare_password) throw statusError.bad_request_with_message('username or password was wrong!')

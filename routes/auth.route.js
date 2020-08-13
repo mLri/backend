@@ -10,22 +10,9 @@ const authController = require('../controllers/auth.controller')
 /* include helpers */
 const { checkAuth } = require('../helpers/token.helper')
 
-router.get('/', (req, res) => {
-  res.json({
-    name: 'tosaporn',
-    status: true
-  })
-})
-
 router.get('/account',
   checkAuth,
   authController.account)
-
-router.post('/test', (req, res) => {
-  res.json({
-    test:'gg'
-  })
-})
 
 router.post('/signin',
   validateBody(schemasAuth.signin),
